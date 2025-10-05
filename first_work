@@ -1,0 +1,189 @@
+import math
+
+def get_minor(arr, i, j):
+    return [row[:j] + row[j + 1:] for row in (arr[:i] + arr[i + 1:])]
+
+
+def transpose_matrix(arr):
+    n = len(arr)
+    transposed = [[0 for _ in range(n)] for _ in range(n)]
+    for i in range(n):
+        for j in range(n):
+            transposed[i][j] = arr[j][i]
+    return transposed
+
+def matrix_multiply(A, B):
+    n = len(A)
+    result = [[0 for _ in range(n)] for _ in range(n)]
+    for i in range(n):
+        for j in range(n):
+            for k in range(n):
+                result[i][j] += A[i][k] * B[k][j]
+    return result
+
+def determinant(arr):
+
+    n = len(arr)
+    if n == 1:
+        return arr[0][0]
+    if n == 2:
+        return arr[0][0] * arr[1][1] - arr[0][1] * arr[1][0]
+
+    det = 0
+    for j in range(n):
+        sign = 1 if j % 2 == 0 else -1
+        minor = get_minor(arr, 0, j)
+        det += sign * arr[0][j] * determinant(minor)
+    return det
+
+
+def invert_by_determinant(arr):
+
+    n = len(arr)
+    det = determinant(arr)
+
+    if n == 1:
+        return [[1 / det]]
+
+
+    cofactor_matrix = [[0 for _ in range(n)] for _ in range(n)]
+    for i in range(n):
+        for j in range(n):
+            sign = 1 if (i + j) % 2 == 0 else -1
+            minor = get_minor(arr, i, j)
+            cofactor_matrix[i][j] = sign * determinant(minor)
+
+    adjoint_matrix = transpose_matrix(cofactor_matrix)
+
+    inverse_matrix = [[(1 / det) * elem for elem in row] for row in adjoint_matrix]
+    return inverse_matrix
+
+
+def gauss_jordan(arr):
+    n = len(arr)
+    identity = [[float(i == j) for i in range(n)] for j in range(n)]
+    aug_arr = [row[:] + identity[i] for i, row in enumerate(arr)]
+
+    for i in range(n):
+        pivot_row = i
+        for j in range(i + 1, n):
+            if abs(aug_arr[j][i]) > abs(aug_arr[pivot_row][i]):
+                pivot_row = j
+        aug_arr[i], aug_arr[pivot_row] = aug_arr[pivot_row], aug_arr[i]
+
+        pivot_val = aug_arr[i][i]
+
+        for j in range(i, 2 * n):
+            aug_arr[i][j] /= pivot_val
+
+        for j in range(n):
+            if i != j:
+                factor = aug_arr[j][i]
+                for k in range(i, 2 * n):
+                    aug_arr[j][k] -= factor * aug_arr[i][k]
+
+    inverse = [row[n:] for row in aug_arr]
+    return inverse
+def lu_decomposition(arr):
+    n = len(arr)
+    L = [[0.0] * n for _ in range(n)]
+    U = [[0.0] * n for _ in range(n)]
+
+    for i in range(n):
+        L[i][i] = 1.0
+
+        for j in range(i, n):
+            s = sum(L[i][k] * U[k][j] for k in range(i))
+            U[i][j] = arr[i][j] - s
+
+        # L 행렬의 i번째 열 계산
+        for j in range(i + 1, n):
+            s = sum(L[j][k] * U[k][i] for k in range(i))
+            if abs(U[i][i]) < 1e-9:
+                return None, None
+            L[j][i] = (arr[j][i] - s) / U[i][i]
+
+    return L, U
+
+
+def main():
+
+    try:
+        n = int(input("행렬의 크기 n을 입력하세요: "))
+        if n <= 0:
+            print("오류: 행렬의 크기는 1 이상이어야 합니다.")
+            return
+
+        arr = []
+        print(f"{n}x{n} 행렬의 원소를 행 단위로, 띄어쓰기로 구분하여 입력하세요.")
+        for i in range(n):
+            row_input = list(map(float, input(f"{i + 1}번째 행 입력: ").split()))
+            if len(row_input) != n:
+                print(f"오류: {n}개의 원소를 입력해야 합니다.")
+                return
+            arr.append(row_input)
+    except ValueError:
+        print("오류: 잘못된 입력입니다. 숫자를 입력해주세요.")
+        return
+
+    print("\n[입력된 행렬]")
+    for row in arr:
+        print([round(elem, 4) for elem in row])
+
+    det = determinant(arr)
+    print(f"\n행렬식(Determinant) 값: {round(det, 4)}")
+
+    if abs(det) < 1e-9:
+        print("오류: 행렬식이 0에 가까우므로 역행렬이 존재하지 않습니다.")
+        return
+
+    inv_det = invert_by_determinant(arr)
+    print("\n[1. 행렬식을 이용한 역행렬]")
+    for row in inv_det:
+        print([round(elem, 4) for elem in row])
+
+    inv_gj = gauss_jordan(arr)
+    print("\n[2. 가우스-조던 소거법을 이용한 역행렬]")
+    for row in inv_gj:
+        print([round(elem, 4) for elem in row])
+
+    print("\n--- [결과 비교] ---")
+    is_same = True
+    for i in range(n):
+        for j in range(n):
+            if not math.isclose(inv_det[i][j], inv_gj[i][j], rel_tol=1e-9, abs_tol=1e-9):
+                is_same = False
+                break
+        if not is_same:
+            break
+
+    if is_same:
+        print("두 방법으로 계산한 역행렬의 결과가 일치합니다.")
+    else:
+        print("두 방법으로 계산한 역행렬의 결과가 일치하지 않습니다.")
+
+    L, U = lu_decomposition(arr)
+    if L and U:
+        print("\n[3. LU 분해 (LU Decomposition)]")
+        print("\nL 행렬 (하삼각행렬):")
+        for row in L:
+            print([round(elem, 4) for elem in row])
+
+        print("\nU 행렬 (상삼각행렬):")
+        for row in U:
+            print([round(elem, 4) for elem in row])
+
+        print("\n--- [LU 분해 검증] ---")
+        LU_product = matrix_multiply(L, U)
+        is_lu_correct = all(math.isclose(arr[i][j], LU_product[i][j], rel_tol=1e-9, abs_tol=1e-9)
+                            for i in range(n) for j in range(n))
+        if is_lu_correct:
+            print("L과 U를 곱한 결과가 원래 행렬 A와 일치합니다.")
+        else:
+            print("L과 U를 곱한 결과가 원래 행렬 A와 일치하지 않습니다.")
+    else:
+        print("\n[3. LU 분해 (LU Decomposition)]")
+        print("행렬의 특성으로 인해 LU 분해에 실패했습니다.")
+
+
+main()
