@@ -34,6 +34,27 @@ def connected(B):
                     return False
     return True
 
+def transitive_closure(B):
+    n = len(B)
+    R = [row[:] for row in B]
+    for k in range(n):
+        for i in range(n):
+            for j in range(n):
+                R[i][j] = R[i][j] or (R[i][k] and R[k][j])
+    return R
+
+def connectedMod(B):
+    n = len(B)
+    C = [row[:] for row in B]
+    R = transitive_closure(C)
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                if not (R[i][j] or R[j][i]):
+                    C[i][j] = 1
+                    R = transitive_closure(C)
+    return C
+
 def reflectMod(B):
     n = len(B)
     C = [row[:] for row in B]
@@ -131,13 +152,24 @@ def main():
         out(B_trans)
         print()
 
+    if not c:
+        print("[연결 폐포 변환 전]")
+        out(B_original)
+        print("[연결 폐포 변환 후]")
+        B_conn = connectedMod(B_original)
+        out(B_conn)
+        print()
+
     B_final = [row[:] for row in B_original]
+
     if not r:
         B_final = reflectMod(B_final)
     if not s:
         B_final = symMod(B_final)
     if not t:
         B_final = transMod(B_final)
+    if not c:
+        B_final = connectedMod(B_final)
 
     print("[최종 폐포 적용 후 관계]")
     out(B_final)
@@ -151,6 +183,7 @@ def main():
     print("최종 반사성 :", "O" if r2 else "X")
     print("최종 대칭성 :", "O" if s2 else "X")
     print("최종 추이성 :", "O" if t2 else "X")
+    print("최종 연결관계 :", "O" if c2 else "X")
     print("최종 동치관계 :", "O" if (r2 and s2 and t2) else "X")
     print()
 
