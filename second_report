@@ -168,8 +168,6 @@ def main():
         B_final = symMod(B_final)
     if not t:
         B_final = transMod(B_final)
-    if not c:
-        B_final = connectedMod(B_final)
 
     print("[최종 폐포 적용 후 관계]")
     out(B_final)
