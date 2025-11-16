@@ -1,0 +1,162 @@
+import sys
+
+def reflect(B):
+    n = len(B)
+    for i in range(n):
+        if B[i][i] != 1:
+            return False
+    return True
+
+def sym(B):
+    n = len(B)
+    for i in range(n):
+        for j in range(n):
+            if B[i][j] != B[j][i]:
+                return False
+    return True
+
+def trans(B):
+    n = len(B)
+    for i in range(n):
+        for j in range(n):
+            if B[i][j] == 1:
+                for k in range(n):
+                    if B[j][k] == 1 and B[i][k] != 1:
+                        return False
+    return True
+
+def connected(B):
+    n = len(B)
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                if not (B[i][j] == 1 or B[j][i] == 1):
+                    return False
+    return True
+
+def reflectMod(B):
+    n = len(B)
+    C = [row[:] for row in B]
+    for i in range(n):
+        C[i][i] = 1
+    return C
+
+def symMod(B):
+    n = len(B)
+    C = [row[:] for row in B]
+    for i in range(n):
+        for j in range(n):
+            if C[i][j] == 1 or C[j][i] == 1:
+                C[i][j] = 1
+                C[j][i] = 1
+    return C
+
+def transMod(B):
+    n = len(B)
+    C = [row[:] for row in B]
+    for k in range(n):
+        for i in range(n):
+            for j in range(n):
+                if C[i][k] == 1 and C[k][j] == 1:
+                    C[i][j] = 1
+    return C
+
+def out(B):
+    for i in range(len(B)):
+        print(" ".join(str(x) for x in B[i]))
+
+def sam(B):
+    n = len(B)
+    for i in range(n):
+        cls = []
+        for j in range(n):
+            if B[i][j] == 1:
+                cls.append(j)
+        inside = ", ".join(str(x) for x in cls)
+        print(f"[{i}] = {{{inside}}}")
+
+def main():
+    n = 5
+    B = []
+    for i in range(n):
+        row = list(map(int, sys.stdin.readline().split()))
+        B.append(row)
+
+    B_original = [row[:] for row in B]
+
+    print("원래 관계 행렬:")
+    out(B_original)
+    print()
+
+    r = reflect(B_original)
+    s = sym(B_original)
+    t = trans(B_original)
+    c = connected(B_original)
+
+    print("반사성 :", "O" if r else "X")
+    print("대칭성 :", "O" if s else "X")
+    print("추이성 :", "O" if t else "X")
+    print("연결관계 :", "O" if c else "X")
+    print("동치관계 :", "O" if (r and s and t) else "X")
+    print()
+
+    if r and s and t:
+        print("동치관계이므로 동치류:")
+        sam(B_original)
+        return
+
+    print("동치관계가 아니므로 폐포를 계산합니다.\n")
+
+    if not r:
+        print("[반사 폐포 변환 전]")
+        out(B_original)
+        print("[반사 폐포 변환 후]")
+        B_ref = reflectMod(B_original)
+        out(B_ref)
+        print()
+
+    if not s:
+        print("[대칭 폐포 변환 전]")
+        out(B_original)
+        print("[대칭 폐포 변환 후]")
+        B_sym = symMod(B_original)
+        out(B_sym)
+        print()
+
+    if not t:
+        print("[추이 폐포 변환 전]")
+        out(B_original)
+        print("[추이 폐포 변환 후]")
+        B_trans = transMod(B_original)
+        out(B_trans)
+        print()
+
+    B_final = [row[:] for row in B_original]
+    if not r:
+        B_final = reflectMod(B_final)
+    if not s:
+        B_final = symMod(B_final)
+    if not t:
+        B_final = transMod(B_final)
+
+    print("[최종 폐포 적용 후 관계]")
+    out(B_final)
+    print()
+
+    r2 = reflect(B_final)
+    s2 = sym(B_final)
+    t2 = trans(B_final)
+    c2 = connected(B_final)
+
+    print("최종 반사성 :", "O" if r2 else "X")
+    print("최종 대칭성 :", "O" if s2 else "X")
+    print("최종 추이성 :", "O" if t2 else "X")
+    print("최종 동치관계 :", "O" if (r2 and s2 and t2) else "X")
+    print()
+
+    if r2 and s2 and t2:
+        print("최종 관계는 동치관계입니다. 동치류:")
+        sam(B_final)
+
+if __name__ == "__main__":
+    main()
